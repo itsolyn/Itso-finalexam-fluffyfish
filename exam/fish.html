@@ -1,0 +1,225 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flappy Fish</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(#4fd6ff, #0099cc);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+
+    #gameContainer {
+      position: relative;
+      width: 400px;
+      height: 600px;
+      background-image: url('ocean.png');
+      background-size: cover;
+      background-position: center;
+      overflow: hidden;
+      border: 4px solid #000;
+      border-radius: 10px;
+    }
+
+    #fish {
+      position: absolute;
+      width: 60px;
+      height: 40px;
+      background-image: url('fish.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      top: 200px;
+      left: 100px;
+      display: none;
+    }
+
+    .obstacle {
+      position: absolute;
+      width: 60px;
+      background-color: green;
+      display: none;
+    }
+
+    #obstacleTop { top: 0; right: 0; }
+    #obstacleBottom { bottom: 0; right: 0; }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 1px 1px 3px black;
+      display: none;
+    }
+
+    #buttonsContainer {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      z-index: 10;
+    }
+
+    #startBtn, #restartBtn {
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #startBtn {
+      background-color: #ff8800;
+    }
+
+    #restartBtn {
+      background-color: #f44336;
+      display: none;
+    }
+
+    #gameOverContainer {
+      position: absolute;
+      top: 200px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      color: white;
+      font-size: 18px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+    }
+
+    #gameOverMessage {
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 1px 1px 3px black;
+    }
+
+    #restartBtn {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <div id="fish"></div>
+    <div id="obstacleTop" class="obstacle"></div>
+    <div id="obstacleBottom" class="obstacle"></div>
+    <div id="score">Score: 0</div>
+    <div id="gameOverContainer">
+      <div id="gameOverMessage">Fish Over! Your Score: 0</div>
+      <button id="restartBtn">Restart Game</button>
+    </div>
+  </div>
+
+  <div id="buttonsContainer">
+    <button id="startBtn">Start Game</button>
+  </div>
+
+  <script>
+    const fish = document.getElementById('fish');
+    const obstacleTop = document.getElementById('obstacleTop');
+    const obstacleBottom = document.getElementById('obstacleBottom');
+    const scoreDisplay = document.getElementById('score');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const gameOverMessage = document.getElementById('gameOverMessage');
+    const gameOverContainer = document.getElementById('gameOverContainer');
+
+    let fishTop = 200;
+    let gravity = 2;
+    let isGameOver = false;
+    let score = 0;
+    let obstacleLeft = 400;
+    let animationId;
+
+    function startGame() {
+      startBtn.style.display = 'none';
+      restartBtn.style.display = 'none';
+      fish.style.display = 'block';
+      obstacleTop.style.display = 'block';
+      obstacleBottom.style.display = 'block';
+      scoreDisplay.style.display = 'block';
+      gameOverMessage.style.display = 'none';
+      gameOverContainer.style.display = 'none';
+      fishTop = 200;
+      score = 0;
+      obstacleLeft = 400;
+      isGameOver = false;
+      updateGame();
+    }
+
+    function updateGame() {
+      if (isGameOver) return;
+
+      fishTop += gravity;
+      fish.style.top = fishTop + 'px';
+
+      obstacleLeft -= 3;
+      obstacleTop.style.right = `${400 - obstacleLeft}px`;
+      obstacleBottom.style.right = `${400 - obstacleLeft}px`;
+
+      if (obstacleLeft < -60) {
+        obstacleLeft = 400;
+        const topHeight = Math.floor(Math.random() * 250) + 50;
+        const gap = 150;
+        obstacleTop.style.height = topHeight + 'px';
+        obstacleBottom.style.height = (600 - topHeight - gap) + 'px';
+        score++;
+        scoreDisplay.textContent = `Score: ${score}`;
+      }
+
+      const fishBottom = fishTop + 40;
+      const topObstacleHeight = parseInt(obstacleTop.style.height);
+      const bottomObstacleTop = 600 - parseInt(obstacleBottom.style.height);
+
+      if (
+        fishTop < 0 ||
+        fishBottom > 600 ||
+        (obstacleLeft < 140 && obstacleLeft > 100 &&
+          (fishTop < topObstacleHeight || fishBottom > bottomObstacleTop))
+      ) {
+        isGameOver = true;
+        cancelAnimationFrame(animationId);
+        gameOverMessage.textContent = `Fish Over! Your Score: ${score}`;
+        gameOverMessage.style.display = 'block';
+        gameOverContainer.style.display = 'block';
+        restartBtn.style.display = 'block';
+      } else {
+        animationId = requestAnimationFrame(updateGame);
+      }
+    }
+
+    document.body.addEventListener('keydown', (e) => {
+      if (!isGameOver && e.code === 'Space') {
+        fishTop -= 40;
+      }
+    });
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', () => location.reload());
+  </script>
+</body>
+</html>
